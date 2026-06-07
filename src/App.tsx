@@ -1,3 +1,4 @@
+import { Turnstile } from '@marsidev/react-turnstile';
 import { useEffect, useState, useRef } from 'react';
 import { supabase, initializeUser } from './supabaseClient';
 import { GAME_CONFIG } from './gameConfig';
@@ -5,6 +6,7 @@ import OceanScene from './OceanScene';
 import './App.css';
 
 function App() {
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [, setUser] = useState<any>(null);
   const [distance, setDistance] = useState<number>(10000); 
   const [loading, setLoading] = useState<boolean>(false);
@@ -147,64 +149,89 @@ function App() {
     });
   };
 
-  const handleFeed = async (choice: 'lollie' | 'shark') => {
-    if (loading || hasFedToday || distance <= 0) return;
+const handleFeed = async (choice: 'lollie' | 'shark') => {
+  if (loading || hasFedToday || distance <= 0) return;
+  
+  // KULLANICI KUTUCUĞU ONAYLAMADIYSA UYAR
+  if (!captchaToken) {
+    alert("Lütfen oyuna müdahale etmeden önce insan olduğunuzu doğrulayın.");
+    return;
+  }
 
-    const clickTime = Date.now();
+  const clickTime = Date.now();
+  
+  // Lokal tıklama efektleri (Ses, animasyon vb.)
+  if (choice === 'shark') {
+    sharkClicksRef.current.push(clickTime);
+    setRecentSharkCount(sharkClicksRef.current.length);
+  } else {
+    lollieClicksRef.current.push(clickTime);
+    setRecentLollieCount(lollieClicksRef.current.length);
+  }
+
+  // Diğer oyunculara animasyon gitsin diye Realtime tetiklemesi
+  if (channelRef.current) {
+    channelRef.current.send({
+      type: 'broadcast',
+      event: 'feed_click',
+      payload: { choice }
+    });
+  }
+
+  setFeedEvent({ id: clickTime, choice });
+  setLoading(true);
+
+ try {
+    triggerInterstitialAd(); // Reklam tetikleyici
     
-    if (choice === 'shark') {
-      sharkClicksRef.current.push(clickTime);
-      setRecentSharkCount(sharkClicksRef.current.length);
-    } else {
-      lollieClicksRef.current.push(clickTime);
-      setRecentLollieCount(lollieClicksRef.current.length);
-    }
+    // 1. Önce Supabase'den o anki anonim kullanıcının kimliğini (ID) çekiyoruz
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUserId = authData.user?.id;
 
-    if (channelRef.current) {
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'feed_click',
-        payload: { choice }
-      });
-    }
-
-    setFeedEvent({ id: clickTime, choice });
-    setLoading(true);
-
-    try {
-      triggerInterstitialAd();
-      
-      // YENİ GÜVENLİ RPC: Dışarıdan parmak izi parametresi göndermiyoruz. 
-      // Supabase arka planda JWT üzerinden kimliği kendisi doğruluyor.
-      const { data, error } = await supabase.rpc('feed_character', { 
-        choice 
-      });
-      
-      if (error) throw error;
-      
-      if (data && data.success === true) {
-        setDistance(data.new_distance);
-        const todayStr = new Date().toISOString().split('T')[0];
-        localStorage.setItem('last_feed_date', todayStr);
-        setHasFedToday(true);
-
-        // KRİTER 15: Yeni mesafeyi dünyaya duyur
-        if (channelRef.current) {
-          channelRef.current.send({
-            type: 'broadcast',
-            event: 'distance_update',
-            payload: { distance: data.new_distance }
-          });
-        }
-      } else if (data && data.error === 'ALREADY_FED_TODAY') {
-        setHasFedToday(true);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
+    if (!currentUserId) {
+      console.error("Kullanıcı kimliği bulunamadı, oturum açılmamış olabilir.");
       setLoading(false);
+      return;
     }
-  };
+
+    // 2. YENİ GÜVENLİ KÖPRÜMÜZE (VERCEL API) İSTEK ATIYORUZ
+    const response = await fetch('/api/feed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        choice: choice, 
+        captchaToken: captchaToken, 
+        userId: currentUserId // Hata veren yeri burası ile güncelledik
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok && data.success === true) {
+      setDistance(data.new_distance);
+      
+      const todayStr = new Date().toISOString().split('T')[0];
+      localStorage.setItem('last_feed_date', todayStr);
+      setHasFedToday(true);
+
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'distance_update',
+          payload: { distance: data.new_distance }
+        });
+      }
+    } else if (data.error === 'ALREADY_FED_TODAY') {
+      setHasFedToday(true);
+    } else {
+      console.error("Hata:", data.error);
+    }
+  } catch (err) {
+    console.error("Bağlantı hatası:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const triggerInterstitialAd = () => {
     if ((window as any).showMonetagInterstitial) {
@@ -237,6 +264,16 @@ function App() {
         </div>
 
         <div className="action-area">
+  
+  {/* YENİ EKLENEN CLOUDFLARE KUTUSU */}
+  <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'center' }}>
+    <Turnstile 
+      siteKey={import.meta.env.VITE_CLOUDFLARE_SITE_KEY} 
+      onSuccess={(token) => setCaptchaToken(token)} 
+      options={{ theme: 'dark' }}
+    />
+  </div>
+          
           <div className="button-group">
             <button 
               className="btn btn-shark" 
