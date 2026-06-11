@@ -181,29 +181,31 @@ const handleFeed = async (choice: 'lollie' | 'shark') => {
   setFeedEvent({ id: clickTime, choice });
   setLoading(true);
 
- try {
+ // ... (Mevcut kodların üst kısmı aynı kalıyor)
+try {
     triggerInterstitialAd(); // Reklam tetikleyici
     
-    // 1. Önce Supabase'den o anki anonim kullanıcının kimliğini (ID) çekiyoruz
-    const { data: authData } = await supabase.auth.getUser();
-    const currentUserId = authData.user?.id;
+    // 1. Kullanıcının şifreli session tokenını çekiyoruz (Güvenli Yol)
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
 
-    if (!currentUserId) {
-      console.error("Kullanıcı kimliği bulunamadı, oturum açılmamış olabilir.");
+    if (!token) {
+      console.error("Oturum doğrulanamadı.");
       setLoading(false);
       return;
     }
 
-    // 2. YENİ GÜVENLİ KÖPRÜMÜZE (VERCEL API) İSTEK ATIYORUZ
+    // 2. VERCEL API'YE İSTEK ATIYORUZ
     const response = await fetch('/api/feed', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         choice: choice, 
         captchaToken: captchaToken, 
-        userId: currentUserId // Hata veren yeri burası ile güncelledik
+        token: token // userId yerine şifreli token gönderiyoruz!
       })
     });
+// ... (Alt kısım aynı kalıyor)
     
     const data = await response.json();
     

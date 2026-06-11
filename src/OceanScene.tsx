@@ -1,4 +1,4 @@
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -18,7 +18,6 @@ function BaitModel({ type }: { type: 'lollie' | 'shark' }) {
   if (type === 'lollie') {
     if (GAME_CONFIG.models.lollieBaitMode === 'gltf') {
       return (
-        /* Orijinal boyutun %50'sine indirdik. Gerekirse 0.3 veya 0.7 yapabilirsin */
         <group scale={[0.1, 0.1, 0.1]}> 
           <SafeModel path={GAME_CONFIG.models.lollieBaitPath} fallback={<torusGeometry args={[0.12, 0.04, 8, 24]} />} />
         </group>
@@ -33,7 +32,6 @@ function BaitModel({ type }: { type: 'lollie' | 'shark' }) {
   } else {
     if (GAME_CONFIG.models.sharkBaitMode === 'gltf') {
       return (
-        /* Köpekbalığı yemi GLTF modelini %50 küçülttük */
         <group scale={[0.4, 0.4, 0.4]}>
           <SafeModel path={GAME_CONFIG.models.sharkBaitPath} fallback={<boxGeometry args={[0.22, 0.22, 0.22]} />} />
         </group>
@@ -67,7 +65,6 @@ function SharkModel() {
 function LollieModel() {
   if (GAME_CONFIG.models.lollieMode === 'gltf') {
     return (
-      /* Orijinal boyutun %40'ına indirdik. Çok küçük gelirse 0.6 yapabilirsin */
       <group scale={[0.2, 0.2, 0.2]}>
         <SafeModel path={GAME_CONFIG.models.lolliePath} fallback={<sphereGeometry args={[0.4, 32, 16]} />} />
       </group>
@@ -95,23 +92,42 @@ function SceneContent({ distance, feedEvent }: { distance: number; feedEvent: an
   const lollieGroupRef = useRef<THREE.Group>(null);
   const distanceRef = useRef(distance);
 
+  // THREE.JS GÜNCEL RESPONSIVE AYARI (useThree sayesinde anlık ekran takibi yapar)
+  const { camera, scene, size } = useThree();
+
   useEffect(() => {
     distanceRef.current = distance;
   }, [distance]);
 
-  // ÇÖZÜM: Yemin türüne (type) göre hedef X koordinatını ayrıştırdık
+  // Ekran boyutu (size) her değiştiğinde (konsoldan dik/yatay yapınca dahil) kamerayı ve sisi canlı günceller
+  useEffect(() => {
+    const isPortrait = size.height > size.width;
+    
+    if (isPortrait) {
+      camera.position.z = 10.5; // Dik ekranda kamerayı geri çek
+      if (scene.fog) {
+        (scene.fog as THREE.Fog).near = 8.5;
+        (scene.fog as THREE.Fog).far = 17.0;
+      }
+    } else {
+      camera.position.z = 5.5; // Yatay ekranda kamerayı yaklaştır
+      if (scene.fog) {
+        (scene.fog as THREE.Fog).near = 4.5;
+        (scene.fog as THREE.Fog).far = 10.5;
+      }
+    }
+    camera.updateProjectionMatrix(); // Değişiklikleri ekrana zorla uygula
+  }, [size.width, size.height, camera, scene]);
+
   const getCharacterX = (type: 'shark' | 'lollie', currentDist: number) => {
     if (type === 'shark') {
-      // Köpekbalığı için dinamik hareket hesaplaması
       return -3.5 + ((10000 - currentDist) / 10000) * 6.0;
     }
-    // Lollie'nin sabit X koordinatı
     return 2.5;
   };
 
   useEffect(() => {
     if (!feedEvent) return;
-    // Yem atıldığında doğru hedefin (Lollie veya Shark) pozisyonunu alır
     const currentX = getCharacterX(feedEvent.choice, distanceRef.current);
     const newBait: BaitInstance = {
       id: feedEvent.id,
@@ -123,59 +139,50 @@ function SceneContent({ distance, feedEvent }: { distance: number; feedEvent: an
     setBaits((prev) => [...prev, newBait]);
   }, [feedEvent]);
 
-  // OceanScene.tsx içindeki useFrame fonksiyonunun yeni hali:
-useFrame((state) => {
-  const time = state.clock.getElapsedTime();
+  useFrame(() => {
+    // Deprecated Clock uyarısını engellemek için yüksek çözünürlüklü performans zamanlayıcısı
+    const time = performance.now() * 0.001; 
 
-  if (sharkGroupRef.current) {
-    // Hedef X konumunu hesapla
-    const targetX = getCharacterX('shark', distanceRef.current);
-    
-    /* LERP TEKNOLOJİSİ: Köpek balığının mevcut X pozisyonunu, gitmesi gereken X pozisyonuna 
-       her karede %5 (%0.05) oranında yaklaştırır. Bu da harika bir süzülme efekti yaratır.
-    */
-    sharkGroupRef.current.position.x = THREE.MathUtils.lerp(
-      sharkGroupRef.current.position.x, 
-      targetX, 
-      0.05
-    );
+    if (sharkGroupRef.current) {
+      const targetX = getCharacterX('shark', distanceRef.current);
+      sharkGroupRef.current.position.x = THREE.MathUtils.lerp(
+        sharkGroupRef.current.position.x, 
+        targetX, 
+        0.05
+      );
+      sharkGroupRef.current.position.y = -0.5 + Math.sin(time * 1.8) * 0.15;
+      sharkGroupRef.current.rotation.z = (-Math.PI / 2) + Math.cos(time * 1.8) * 0.08;
+    }
 
-    // Yukarı-aşağı dalgalanma ve hafif dönüş animasyonları
-    sharkGroupRef.current.position.y = -0.5 + Math.sin(time * 1.8) * 0.15;
-    sharkGroupRef.current.rotation.z = (-Math.PI / 2) + Math.cos(time * 1.8) * 0.08;
-  }
+    if (lollieGroupRef.current) {
+      lollieGroupRef.current.position.y = -0.8 + Math.sin(time * 3.5) * 0.12;
+      lollieGroupRef.current.rotation.y = Math.cos(time * 4.0) * 0.2;
+    }
 
-  if (lollieGroupRef.current) {
-    lollieGroupRef.current.position.y = -0.8 + Math.sin(time * 3.5) * 0.12;
-    lollieGroupRef.current.rotation.y = Math.cos(time * 4.0) * 0.2;
-  }
+    setBaits((prevBaits) => {
+      const currentSharkY = sharkGroupRef.current ? sharkGroupRef.current.position.y : -0.5;
+      const currentLollieY = lollieGroupRef.current ? lollieGroupRef.current.position.y : -0.8;
 
-  // Yemlerin havada süzülürken karakterlerin dinamik konumuna kilitlenmesi
-  setBaits((prevBaits) => {
-    const currentSharkY = sharkGroupRef.current ? sharkGroupRef.current.position.y : -0.5;
-    const currentLollieY = lollieGroupRef.current ? lollieGroupRef.current.position.y : -0.8;
+      return prevBaits
+        .map((bait) => {
+          const characterX = bait.type === 'shark' && sharkGroupRef.current 
+            ? sharkGroupRef.current.position.x 
+            : getCharacterX(bait.type, distanceRef.current);
 
-    return prevBaits
-      .map((bait) => {
-        // Eğer yem köpek balığına atıldıysa, havada düşerken köpek balığının o anki anlık akıcı X koordinatını takip eder
-        const characterX = bait.type === 'shark' && sharkGroupRef.current 
-          ? sharkGroupRef.current.position.x 
-          : getCharacterX(bait.type, distanceRef.current);
-
-        return { ...bait, x: characterX, y: bait.y - bait.speed };
-      })
-      .filter((bait) => {
-        const limitY = bait.type === 'shark' ? currentSharkY : currentLollieY;
-        return bait.y > limitY;
-      });
+          return { ...bait, x: characterX, y: bait.y - bait.speed };
+        })
+        .filter((bait) => {
+          const limitY = bait.type === 'shark' ? currentSharkY : currentLollieY;
+          return bait.y > limitY;
+        });
+    });
   });
-});
 
   return (
     <>
-      <ambientLight intensity={1.5} color="#b9e3de" />
-      <directionalLight position={[5, 15, 8]} intensity={2.5} color="#ffffff" />
-      <pointLight position={[0, 2, 6]} intensity={1.8} color="#e0f2fe" distance={25} />
+      <ambientLight intensity={2.5} color="#c2f0eb" />
+      <directionalLight position={[5, 15, 10]} intensity={3.5} color="#ffffff" />
+      <pointLight position={[0, 3, 7]} intensity={2.8} color="#e0f2fe" distance={30} />
 
       <group ref={sharkGroupRef} position={[-3.5, -0.5, 0]} rotation={[0, 0, -Math.PI / 2]}>
         <SharkModel />
@@ -231,7 +238,7 @@ export default function OceanScene({ distance, feedEvent }: { distance: number; 
   return (
     <Canvas camera={{ position: [0, 0, 5.5], fov: 60 }}>
       <color attach="background" args={['#030712']} />
-      <fog attach="fog" args={['#030712', 4.5, 9.5]} />
+      <fog attach="fog" args={['#030712', 4.5, 10.5]} />
       <Suspense fallback={null}>
         <SceneContent distance={distance} feedEvent={feedEvent} />
       </Suspense>
