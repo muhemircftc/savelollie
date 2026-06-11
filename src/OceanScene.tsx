@@ -91,43 +91,59 @@ function SceneContent({ distance, feedEvent }: { distance: number; feedEvent: an
   const sharkGroupRef = useRef<THREE.Group>(null);
   const lollieGroupRef = useRef<THREE.Group>(null);
   const distanceRef = useRef(distance);
+  
+  // Mükerrer yem tetiklenmesini engellemek için hafıza referansı
+  const lastProcessedIdRef = useRef<number | null>(null);
 
-  // THREE.JS GÜNCEL RESPONSIVE AYARI (useThree sayesinde anlık ekran takibi yapar)
   const { camera, scene, size } = useThree();
 
   useEffect(() => {
     distanceRef.current = distance;
   }, [distance]);
 
-  // Ekran boyutu (size) her değiştiğinde (konsoldan dik/yatay yapınca dahil) kamerayı ve sisi canlı günceller
   useEffect(() => {
     const isPortrait = size.height > size.width;
-    
     if (isPortrait) {
-      camera.position.z = 10.5; // Dik ekranda kamerayı geri çek
+      camera.position.z = 10.5;
       if (scene.fog) {
         (scene.fog as THREE.Fog).near = 8.5;
         (scene.fog as THREE.Fog).far = 17.0;
       }
     } else {
-      camera.position.z = 5.5; // Yatay ekranda kamerayı yaklaştır
+      camera.position.z = 5.5;
       if (scene.fog) {
         (scene.fog as THREE.Fog).near = 4.5;
         (scene.fog as THREE.Fog).far = 10.5;
       }
     }
-    camera.updateProjectionMatrix(); // Değişiklikleri ekrana zorla uygula
+    camera.updateProjectionMatrix();
   }, [size.width, size.height, camera, scene]);
 
+  // RESPONSIVE KARAKTER POZİSYONLARI
   const getCharacterX = (type: 'shark' | 'lollie', currentDist: number) => {
+    const isPortraitMode = size.height > size.width;
+    
+    // Dik ekrandaysak karakterleri merkeze yaklaştır (-2.1), yataydaysa serbest bırak (-3.5)
+    const sharkStartX = isPortraitMode ? -2.1 : -3.5;
+    const lollieX = isPortraitMode ? 1.7 : 2.5;
+    const movementRange = isPortraitMode ? 3.8 : 6.0;
+
     if (type === 'shark') {
-      return -3.5 + ((10000 - currentDist) / 10000) * 6.0;
+      return sharkStartX + ((10000 - currentDist) / 10000) * movementRange;
     }
-    return 2.5;
+    return lollieX;
   };
 
+  // YEM ATILMA TETİKLEYİCİSİ
   useEffect(() => {
     if (!feedEvent) return;
+    
+    // Eğer bu ID'deki yem daha önce düşürüldüyse tekrar düşürme (Sonsuz döngü engeli)
+    if (feedEvent.id === lastProcessedIdRef.current) return;
+    lastProcessedIdRef.current = feedEvent.id;
+
+    console.log("Canvas içine yeni yem ulaştı:", feedEvent);
+
     const currentX = getCharacterX(feedEvent.choice, distanceRef.current);
     const newBait: BaitInstance = {
       id: feedEvent.id,
@@ -137,10 +153,9 @@ function SceneContent({ distance, feedEvent }: { distance: number; feedEvent: an
       speed: 0.09 + Math.random() * 0.03
     };
     setBaits((prev) => [...prev, newBait]);
-  }, [feedEvent]);
+  }, [feedEvent, size.width, size.height]);
 
   useFrame(() => {
-    // Deprecated Clock uyarısını engellemek için yüksek çözünürlüklü performans zamanlayıcısı
     const time = performance.now() * 0.001; 
 
     if (sharkGroupRef.current) {
@@ -155,6 +170,8 @@ function SceneContent({ distance, feedEvent }: { distance: number; feedEvent: an
     }
 
     if (lollieGroupRef.current) {
+      const targetX = getCharacterX('lollie', distanceRef.current);
+      lollieGroupRef.current.position.x = targetX;
       lollieGroupRef.current.position.y = -0.8 + Math.sin(time * 3.5) * 0.12;
       lollieGroupRef.current.rotation.y = Math.cos(time * 4.0) * 0.2;
     }
