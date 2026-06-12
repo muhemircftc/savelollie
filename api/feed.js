@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Sadece POST metoduna izin verilir' });
+    return res.status(405).json({ error: 'Only the POST method is allowed.' });
   }
 
   const { choice, captchaToken, token } = req.body; // userId yerine token aldık
@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   
   const verifyData = await verifyRes.json();
   if (!verifyData.success) {
-    return res.status(400).json({ error: 'Bot saldırısı tespit edildi!' });
+    return res.status(400).json({ error: 'Bot attack detected!' });
   }
 
   // 2. SUPABASE'E BAĞLAN
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   
   if (authError || !user) {
-    return res.status(401).json({ error: 'Geçersiz veya sahte kullanıcı oturumu!' });
+    return res.status(401).json({ error: 'Invalid or fake user session!' });
   }
 
   const verifiedUserId = user.id; // Artık trollerin manipüle edemeyeceği gerçek ID elimizde

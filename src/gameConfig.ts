@@ -30,19 +30,5 @@ export const GAME_CONFIG = {
 
   },
 
-
-
-  // MONETAG REKLAM KANALLARI KİMLİKLERİ
-
-  ads: {
-
-    topBannerId: '11137673',
-
-    bottomBannerId: '11137677',
-
-    interstitialId: '11137667'
-
-  }
-
 }; 
 

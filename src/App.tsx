@@ -156,7 +156,7 @@ function App() {
     if (loading || hasFedToday || distance <= 0) return;
     
     if (!captchaToken) {
-      alert("Lütfen oyuna müdahale etmeden önce insan olduğunuzu doğrulayın.");
+      alert("Please verify that you are human before interfering in the game!");
       return;
     }
 
@@ -167,7 +167,7 @@ function App() {
       const token = sessionData.session?.access_token;
 
       if (!token) {
-        console.error("Oturum doğrulanamadı.");
+        console.error("The session could not be verified.");
         setLoading(false);
         return;
       }
@@ -206,12 +206,12 @@ function App() {
         }
       } else if (data.error === 'ALREADY_FED_TODAY') {
         setHasFedToday(true);
-        alert("Bugün zaten oy hakkınızı kullandınız!");
+        alert("You have already used your feed allowance today!");
       } else {
-        console.error("Hata:", data.error);
+        console.error("Error:", data.error);
       }
     } catch (err) {
-      console.error("Bağlantı hatası:", err);
+      console.error("Connection error:", err);
     } finally {
       setLoading(false);
     }
