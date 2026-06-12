@@ -152,40 +152,17 @@ function App() {
 const handleFeed = async (choice: 'lollie' | 'shark') => {
   if (loading || hasFedToday || distance <= 0) return;
   
-  // KULLANICI KUTUCUĞU ONAYLAMADIYSA UYAR
   if (!captchaToken) {
     alert("Lütfen oyuna müdahale etmeden önce insan olduğunuzu doğrulayın.");
     return;
   }
 
   const clickTime = Date.now();
-  
-  // Lokal tıklama efektleri (Ses, animasyon vb.)
-  if (choice === 'shark') {
-    sharkClicksRef.current.push(clickTime);
-    setRecentSharkCount(sharkClicksRef.current.length);
-  } else {
-    lollieClicksRef.current.push(clickTime);
-    setRecentLollieCount(lollieClicksRef.current.length);
-  }
-
-  // Diğer oyunculara animasyon gitsin diye Realtime tetiklemesi
-  if (channelRef.current) {
-    channelRef.current.send({
-      type: 'broadcast',
-      event: 'feed_click',
-      payload: { choice }
-    });
-  }
-
-  setFeedEvent({ id: clickTime, choice });
   setLoading(true);
 
- // ... (Mevcut kodların üst kısmı aynı kalıyor)
-try {
+  try {
     triggerInterstitialAd(); // Reklam tetikleyici
     
-    // 1. Kullanıcının şifreli session tokenını çekiyoruz (Güvenli Yol)
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
 
@@ -195,28 +172,45 @@ try {
       return;
     }
 
-    // 2. VERCEL API'YE İSTEK ATIYORUZ
     const response = await fetch('/api/feed', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         choice: choice, 
         captchaToken: captchaToken, 
-        token: token // userId yerine şifreli token gönderiyoruz!
+        token: token 
       })
     });
-// ... (Alt kısım aynı kalıyor)
     
     const data = await response.json();
     
     if (response.ok && data.success === true) {
+      // YALNIZCA BAŞARILIYSA EKRANDA YEM DÜŞÜR VE DİĞERLERİNE DUYUR
+      if (choice === 'shark') {
+        sharkClicksRef.current.push(clickTime);
+        setRecentSharkCount(sharkClicksRef.current.length);
+      } else {
+        lollieClicksRef.current.push(clickTime);
+        setRecentLollieCount(lollieClicksRef.current.length);
+      }
+
+      setFeedEvent({ id: clickTime, choice });
       setDistance(data.new_distance);
       
       const todayStr = new Date().toISOString().split('T')[0];
       localStorage.setItem('last_feed_date', todayStr);
       setHasFedToday(true);
 
+      // Canlı yayın sinyallerini şimdi gönderiyoruz
       if (channelRef.current) {
+        // Canlı düşen yem animasyonu için
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'feed_click',
+          payload: { choice }
+        });
+        
+        // Canlı mesafe senkronizasyonu için
         channelRef.current.send({
           type: 'broadcast',
           event: 'distance_update',
@@ -225,6 +219,7 @@ try {
       }
     } else if (data.error === 'ALREADY_FED_TODAY') {
       setHasFedToday(true);
+      alert("Bugün zaten oy hakkınızı kullandınız!");
     } else {
       console.error("Hata:", data.error);
     }
