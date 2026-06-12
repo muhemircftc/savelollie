@@ -36,11 +36,11 @@ export const GAME_CONFIG = {
 
   ads: {
 
-    topBannerId: 'monetag-top-zone-id',
+    topBannerId: '11137673',
 
-    bottomBannerId: 'monetag-bottom-zone-id',
+    bottomBannerId: '11137677',
 
-    interstitialId: 'monetag-interstitial-id'
+    interstitialId: '11137667'
 
   }
 
