@@ -11,7 +11,6 @@ function App() {
   const [distance, setDistance] = useState<number>(10000); 
   const [loading, setLoading] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(true);
-  const [feedEvent, setFeedEvent] = useState<{ id: number; choice: 'lollie' | 'shark' } | null>(null);
   const [hasFedToday, setHasFedToday] = useState<boolean>(false);
 
   const [recentSharkCount, setRecentSharkCount] = useState<number>(0);
@@ -194,7 +193,6 @@ const handleFeed = async (choice: 'lollie' | 'shark') => {
         setRecentLollieCount(lollieClicksRef.current.length);
       }
 
-      setFeedEvent({ id: clickTime, choice });
       setDistance(data.new_distance);
       
       const todayStr = new Date().toISOString().split('T')[0];
@@ -240,7 +238,7 @@ const handleFeed = async (choice: 'lollie' | 'shark') => {
   return (
     <div className="game-container">
       <div className="fullscreen-3d-environment">
-        <OceanScene distance={distance} feedEvent={feedEvent} />
+        <OceanScene distance={distance} />
       </div>
 
       <div className="ad-banner top-banner">

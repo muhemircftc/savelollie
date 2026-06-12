@@ -86,14 +86,12 @@ interface BaitInstance {
   speed: number;
 }
 
-function SceneContent({ distance, feedEvent }: { distance: number; feedEvent: any }) {
+// YENİ HALİ:
+function SceneContent({ distance }: { distance: number }) {
   const [baits, setBaits] = useState<BaitInstance[]>([]);
   const sharkGroupRef = useRef<THREE.Group>(null);
   const lollieGroupRef = useRef<THREE.Group>(null);
   const distanceRef = useRef(distance);
-  
-  // Mükerrer yem tetiklenmesini engellemek için hafıza referansı
-  const lastProcessedIdRef = useRef<number | null>(null);
 
   const { camera, scene, size } = useThree();
 
@@ -122,8 +120,6 @@ function SceneContent({ distance, feedEvent }: { distance: number; feedEvent: an
   // RESPONSIVE KARAKTER POZİSYONLARI
   const getCharacterX = (type: 'shark' | 'lollie', currentDist: number) => {
     const isPortraitMode = size.height > size.width;
-    
-    // Dik ekrandaysak karakterleri merkeze yaklaştır (-2.1), yataydaysa serbest bırak (-3.5)
     const sharkStartX = isPortraitMode ? -2.1 : -3.5;
     const lollieX = isPortraitMode ? 1.7 : 2.5;
     const movementRange = isPortraitMode ? 3.8 : 6.0;
@@ -134,26 +130,32 @@ function SceneContent({ distance, feedEvent }: { distance: number; feedEvent: an
     return lollieX;
   };
 
-  // YEM ATILMA TETİKLEYİCİSİ
+  // 🔄 OTOMATİK, KESİNTİSİZ VE HIZLI YEM AKIŞI MECHANISM (BUTONDAN BAĞIMSIZ)
   useEffect(() => {
-    if (!feedEvent) return;
-    
-    // Eğer bu ID'deki yem daha önce düşürüldüyse tekrar düşürme (Sonsuz döngü engeli)
-    if (feedEvent.id === lastProcessedIdRef.current) return;
-    lastProcessedIdRef.current = feedEvent.id;
+    const interval = setInterval(() => {
+      const now = performance.now();
+      
+      setBaits((prev) => [
+        ...prev,
+        {
+          id: now + Math.random(),
+          type: 'shark',
+          x: 0, // useFrame içinde karakterin canlı X koordinatına otomatik kilitlenir
+          y: 5.5,
+          speed: 0.08 + Math.random() * 0.04 // Dinamik ve hızlı düşüş varyasyonu
+        },
+        {
+          id: now + Math.random() + 1,
+          type: 'lollie',
+          x: 0,
+          y: 5.5,
+          speed: 0.08 + Math.random() * 0.04
+        }
+      ]);
+    }, 220); // Her 220ms'de bir çift yeni yem gökten düşmeye başlar
 
-    console.log("Canvas içine yeni yem ulaştı:", feedEvent);
-
-    const currentX = getCharacterX(feedEvent.choice, distanceRef.current);
-    const newBait: BaitInstance = {
-      id: feedEvent.id,
-      type: feedEvent.choice,
-      x: currentX,
-      y: 5.5,
-      speed: 0.09 + Math.random() * 0.03
-    };
-    setBaits((prev) => [...prev, newBait]);
-  }, [feedEvent, size.width, size.height]);
+    return () => clearInterval(interval);
+  }, []);
 
   useFrame(() => {
     const time = performance.now() * 0.001; 
@@ -251,13 +253,13 @@ function ParticlesEffect() {
   );
 }
 
-export default function OceanScene({ distance, feedEvent }: { distance: number; feedEvent: any }) {
+export default function OceanScene({ distance }: { distance: number }) {
   return (
     <Canvas camera={{ position: [0, 0, 5.5], fov: 60 }}>
       <color attach="background" args={['#030712']} />
       <fog attach="fog" args={['#030712', 4.5, 10.5]} />
       <Suspense fallback={null}>
-        <SceneContent distance={distance} feedEvent={feedEvent} />
+        <SceneContent distance={distance} />
       </Suspense>
     </Canvas>
   );
