@@ -13,16 +13,15 @@ function App() {
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [hasFedToday, setHasFedToday] = useState<boolean>(false);
 
-  const [recentSharkCount, setRecentSharkCount] = useState<number>(0);
-  const [recentLollieCount, setRecentLollieCount] = useState<number>(0);
-  const sharkClicksRef = useRef<number[]>([]);
-  const lollieClicksRef = useRef<number[]>([]);
+  // 🧠 SİMÜLASYON SİSTEMİ: Başlangıç değerlerini 10 olarak atıyoruz (0'dan başlamasın diye)
+  const [recentSharkCount, setRecentSharkCount] = useState<number>(10);
+  const [recentLollieCount, setRecentLollieCount] = useState<number>(10);
 
   const channelRef = useRef<any>(null);
   const soundTimerRef = useRef<any>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // KRİTER 6 & 15: Veritabanı masrafı için polling 30 saniyeye çıkarıldı (Yük azaltıldı)
+  // Veritabanından ana mesafeyi çeken fonksiyon (30 saniyede bir çalışır)
   const fetchGameState = async () => {
     const { data, error } = await supabase.from('game_state').select('distance').single();
     if (!error && data) {
@@ -32,7 +31,6 @@ function App() {
 
   useEffect(() => {
     const setupGame = async () => {
-      // Anonim oturumu başlat ve kullanıcı bilgilerini al
       const currentUser = await initializeUser();
       setUser(currentUser);
       await fetchGameState();
@@ -40,11 +38,10 @@ function App() {
       if (currentUser) {
         const todayStr = new Date().toISOString().split('T')[0];
         
-        // KRİTER 1 & 9: Güvenli JWT doğrulama - Bu benzersiz üye bugün tıklama yaptı mı?
         const { data: logData } = await supabase
           .from('feed_logs')
           .select('fingerprint')
-          .eq('fingerprint', currentUser.id) // Artık cihaz izi değil, şifreli kullanıcı ID'si aranıyor
+          .eq('fingerprint', currentUser.id)
           .eq('feed_date', todayStr)
           .maybeSingle();
 
@@ -59,20 +56,11 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // KRİTER 5 & 15: Canlı Mesafe Yayını (Veritabanına sormadan mesafeyi anlık günceller)
+  // ⚡ CANLI MESAFE YAYINI: Diğer oyuncuların yarattığı mesafeyi anlık senkronize eder
   useEffect(() => {
     const myChannel = supabase.channel('global_feeds');
     myChannel
-      .on('broadcast', { event: 'feed_click' }, ({ payload }) => {
-        const clickTime = Date.now();
-        if (payload.choice === 'shark') {
-          sharkClicksRef.current.push(clickTime);
-        } else if (payload.choice === 'lollie') {
-          lollieClicksRef.current.push(clickTime);
-        }
-      })
       .on('broadcast', { event: 'distance_update' }, ({ payload }) => {
-        // BAŞKA BİRİ TIKLADIĞINDA MESAFEYİ DB SORGUSU OLMADAN ANINDA GÜNCELLE
         setDistance(payload.distance);
       })
       .subscribe();
@@ -81,17 +69,42 @@ function App() {
     return () => { supabase.removeChannel(myChannel); };
   }, []);
 
+  // 🧠 AKILLI OYUNCU SİMÜLASYONU (Günün saatine göre organik dalgalanma motoru)
   useEffect(() => {
-    const updateRecentCounts = () => {
-      const now = Date.now();
-      const tenSecondsAgo = now - 10000;
-      sharkClicksRef.current = sharkClicksRef.current.filter(time => time > tenSecondsAgo);
-      lollieClicksRef.current = lollieClicksRef.current.filter(time => time > tenSecondsAgo);
-      setRecentSharkCount(sharkClicksRef.current.length);
-      setRecentLollieCount(lollieClicksRef.current.length);
-    };
-    const counterTimer = setInterval(updateRecentCounts, 200);
-    return () => clearInterval(counterTimer);
+    const simulationInterval = setInterval(() => {
+      const hour = new Date().getHours();
+      
+      // Standart saatler için limitler (07:00 - 17:00)
+      let minVal = 8;
+      let maxVal = 18;
+
+      if (hour >= 18 && hour <= 23) { 
+        // Akşam saatleri: Trafik yoğun simülasyonu
+        minVal = 22; 
+        maxVal = 45; 
+      } else if (hour >= 1 && hour <= 6) { 
+        // Gece/Sabah karşı: Trafik çok sakin simülasyonu
+        minVal = 1; 
+        maxVal = 6; 
+      }
+
+      // Shark sayacını güncelle
+      setRecentSharkCount((current) => {
+        if (current > maxVal) return current - (Math.floor(Math.random() * 2) + 1);
+        if (current < minVal) return current + (Math.floor(Math.random() * 2) + 1);
+        return current + (Math.floor(Math.random() * 3) - 1); // Organik -1, 0, +1 oynama
+      });
+
+      // Lollie sayacını güncelle
+      setRecentLollieCount((current) => {
+        if (current > maxVal) return current - (Math.floor(Math.random() * 2) + 1);
+        if (current < minVal) return current + (Math.floor(Math.random() * 2) + 1);
+        return current + (Math.floor(Math.random() * 3) - 1);
+      });
+
+    }, 2500); // Her 2.5 saniyede bir sayıları hafifçe esnetir
+
+    return () => clearInterval(simulationInterval);
   }, []);
 
   useEffect(() => {
@@ -148,85 +161,73 @@ function App() {
     });
   };
 
-const handleFeed = async (choice: 'lollie' | 'shark') => {
-  if (loading || hasFedToday || distance <= 0) return;
-  
-  if (!captchaToken) {
-    alert("Lütfen oyuna müdahale etmeden önce insan olduğunuzu doğrulayın.");
-    return;
-  }
-
-  const clickTime = Date.now();
-  setLoading(true);
-
-  try {
-    triggerInterstitialAd(); // Reklam tetikleyici
+  const handleFeed = async (choice: 'lollie' | 'shark') => {
+    if (loading || hasFedToday || distance <= 0) return;
     
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-
-    if (!token) {
-      console.error("Oturum doğrulanamadı.");
-      setLoading(false);
+    if (!captchaToken) {
+      alert("Lütfen oyuna müdahale etmeden önce insan olduğunuzu doğrulayın.");
       return;
     }
 
-    const response = await fetch('/api/feed', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        choice: choice, 
-        captchaToken: captchaToken, 
-        token: token 
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok && data.success === true) {
-      // YALNIZCA BAŞARILIYSA EKRANDA YEM DÜŞÜR VE DİĞERLERİNE DUYUR
-      if (choice === 'shark') {
-        sharkClicksRef.current.push(clickTime);
-        setRecentSharkCount(sharkClicksRef.current.length);
-      } else {
-        lollieClicksRef.current.push(clickTime);
-        setRecentLollieCount(lollieClicksRef.current.length);
-      }
+    setLoading(true);
 
-      setDistance(data.new_distance);
+    try {
+      triggerInterstitialAd(); 
       
-      const todayStr = new Date().toISOString().split('T')[0];
-      localStorage.setItem('last_feed_date', todayStr);
-      setHasFedToday(true);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
-      // Canlı yayın sinyallerini şimdi gönderiyoruz
-      if (channelRef.current) {
-        // Canlı düşen yem animasyonu için
-        channelRef.current.send({
-          type: 'broadcast',
-          event: 'feed_click',
-          payload: { choice }
-        });
-        
-        // Canlı mesafe senkronizasyonu için
-        channelRef.current.send({
-          type: 'broadcast',
-          event: 'distance_update',
-          payload: { distance: data.new_distance }
-        });
+      if (!token) {
+        console.error("Oturum doğrulanamadı.");
+        setLoading(false);
+        return;
       }
-    } else if (data.error === 'ALREADY_FED_TODAY') {
-      setHasFedToday(true);
-      alert("Bugün zaten oy hakkınızı kullandınız!");
-    } else {
-      console.error("Hata:", data.error);
+
+      const response = await fetch('/api/feed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          choice: choice, 
+          captchaToken: captchaToken, 
+          token: token 
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success === true) {
+        // 🟢 İLLÜZYON BAĞI: Kullanıcı hangi butona bastıysa, o sayacı el değerimizle anında +1 artırıyoruz!
+        if (choice === 'shark') {
+          setRecentSharkCount((prev) => prev + 1);
+        } else {
+          setRecentLollieCount((prev) => prev + 1);
+        }
+
+        setDistance(data.new_distance);
+        
+        const todayStr = new Date().toISOString().split('T')[0];
+        localStorage.setItem('last_feed_date', todayStr);
+        setHasFedToday(true);
+
+        if (channelRef.current) {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'distance_update',
+            payload: { distance: data.new_distance }
+          });
+        }
+      } else if (data.error === 'ALREADY_FED_TODAY') {
+        setHasFedToday(true);
+        alert("Bugün zaten oy hakkınızı kullandınız!");
+      } else {
+        console.error("Hata:", data.error);
+      }
+    } catch (err) {
+      console.error("Bağlantı hatası:", err);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Bağlantı hatası:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const triggerInterstitialAd = () => {
     if ((window as any).showMonetagInterstitial) {
@@ -259,15 +260,13 @@ const handleFeed = async (choice: 'lollie' | 'shark') => {
         </div>
 
         <div className="action-area">
-  
-  {/* YENİ EKLENEN CLOUDFLARE KUTUSU */}
-  <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'center' }}>
-    <Turnstile 
-      siteKey={import.meta.env.VITE_CLOUDFLARE_SITE_KEY} 
-      onSuccess={(token) => setCaptchaToken(token)} 
-      options={{ theme: 'dark' }}
-    />
-  </div>
+          <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'center' }}>
+            <Turnstile 
+              siteKey={import.meta.env.VITE_CLOUDFLARE_SITE_KEY} 
+              onSuccess={(token) => setCaptchaToken(token)} 
+              options={{ theme: 'dark' }}
+            />
+          </div>
           
           <div className="button-group">
             <button 
