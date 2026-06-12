@@ -5,6 +5,11 @@ import { GAME_CONFIG } from './gameConfig';
 import OceanScene from './OceanScene';
 import './App.css';
 
+// 🛠️ REKLAM LINKLERINI BURAYA YAPIŞTIRIN (Monetag panelinden aldığın src linkleri)
+const UST_BANNER_SRC = "https://nap5k.com/tag.min.js"; 
+const ALT_BANNER_SRC = "https://nap5k.com/tag.min.js"; 
+const GECIS_REKLAM_SRC = "https://n6wxm.com/vignette.min.js"; 
+
 function App() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [, setUser] = useState<any>(null);
@@ -13,7 +18,6 @@ function App() {
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [hasFedToday, setHasFedToday] = useState<boolean>(false);
 
-  // 🧠 SİMÜLASYON SİSTEMİ: Başlangıç değerlerini 10 olarak atıyoruz (0'dan başlamasın diye)
   const [recentSharkCount, setRecentSharkCount] = useState<number>(10);
   const [recentLollieCount, setRecentLollieCount] = useState<number>(10);
 
@@ -21,7 +25,6 @@ function App() {
   const soundTimerRef = useRef<any>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // Veritabanından ana mesafeyi çeken fonksiyon (30 saniyede bir çalışır)
   const fetchGameState = async () => {
     const { data, error } = await supabase.from('game_state').select('distance').single();
     if (!error && data) {
@@ -56,7 +59,6 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // ⚡ CANLI MESAFE YAYINI: Diğer oyuncuların yarattığı mesafeyi anlık senkronize eder
   useEffect(() => {
     const myChannel = supabase.channel('global_feeds');
     myChannel
@@ -69,42 +71,61 @@ function App() {
     return () => { supabase.removeChannel(myChannel); };
   }, []);
 
-  // 🧠 AKILLI OYUNCU SİMÜLASYONU (Günün saatine göre organik dalgalanma motoru)
+  // 🧠 SİMÜLASYON MOTORU
   useEffect(() => {
     const simulationInterval = setInterval(() => {
       const hour = new Date().getHours();
-      
-      // Standart saatler için limitler (07:00 - 17:00)
       let minVal = 8;
       let maxVal = 18;
 
       if (hour >= 18 && hour <= 23) { 
-        // Akşam saatleri: Trafik yoğun simülasyonu
         minVal = 22; 
         maxVal = 45; 
       } else if (hour >= 1 && hour <= 6) { 
-        // Gece/Sabah karşı: Trafik çok sakin simülasyonu
         minVal = 1; 
         maxVal = 6; 
       }
 
-      // Shark sayacını güncelle
       setRecentSharkCount((current) => {
         if (current > maxVal) return current - (Math.floor(Math.random() * 2) + 1);
         if (current < minVal) return current + (Math.floor(Math.random() * 2) + 1);
-        return current + (Math.floor(Math.random() * 3) - 1); // Organik -1, 0, +1 oynama
+        return current + (Math.floor(Math.random() * 3) - 1);
       });
 
-      // Lollie sayacını güncelle
       setRecentLollieCount((current) => {
         if (current > maxVal) return current - (Math.floor(Math.random() * 2) + 1);
         if (current < minVal) return current + (Math.floor(Math.random() * 2) + 1);
         return current + (Math.floor(Math.random() * 3) - 1);
       });
 
-    }, 2500); // Her 2.5 saniyede bir sayıları hafifçe esnetir
+    }, 2500);
 
     return () => clearInterval(simulationInterval);
+  }, []);
+
+  // 🛠️ ADIM 1: BANNER REKLAMLARINI KUTULARIN İÇİNE ZORLA HAPSEDEN MOTOR
+  useEffect(() => {
+    // Üst Banner Kutusu Çizildi mi kontrol et ve içine script enjekte et
+    const topBox = document.getElementById(GAME_CONFIG.ads.topBannerId);
+    if (topBox && topBox.children.length === 0) {
+      const script = document.createElement('script');
+      script.setAttribute('data-cfasync', 'false');
+      script.async = true;
+      script.type = 'text/javascript';
+      script.src = UST_BANNER_SRC;
+      topBox.appendChild(script);
+    }
+
+    // Alt Banner Kutusu Çizildi mi kontrol et ve içine script enjekte et
+    const bottomBox = document.getElementById(GAME_CONFIG.ads.bottomBannerId);
+    if (bottomBox && bottomBox.children.length === 0) {
+      const script = document.createElement('script');
+      script.setAttribute('data-cfasync', 'false');
+      script.async = true;
+      script.type = 'text/javascript';
+      script.src = ALT_BANNER_SRC;
+      bottomBox.appendChild(script);
+    }
   }, []);
 
   useEffect(() => {
@@ -172,7 +193,7 @@ function App() {
     setLoading(true);
 
     try {
-      triggerInterstitialAd(); 
+      triggerInterstitialAd(); // Reklamı tetikle (Artık sadece burada yüklenecek!)
       
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
@@ -196,7 +217,6 @@ function App() {
       const data = await response.json();
       
       if (response.ok && data.success === true) {
-        // 🟢 İLLÜZYON BAĞI: Kullanıcı hangi butona bastıysa, o sayacı el değerimizle anında +1 artırıyoruz!
         if (choice === 'shark') {
           setRecentSharkCount((prev) => prev + 1);
         } else {
@@ -229,11 +249,19 @@ function App() {
     }
   };
 
+  // 🛠️ ADIM 2: GEÇİŞ REKLAMINI SADECE BUTONA BASILDIĞINDA DOĞURAN AKILLI TETİKLEYİCİ
   const triggerInterstitialAd = () => {
-    if ((window as any).showMonetagInterstitial) {
-      (window as any).showMonetagInterstitial();
+    const scriptId = 'monetag-vignette-script';
+    
+    // Eğer script daha önce eklenmediyse, İLK KEZ butona basıldığında dinamik olarak oluştur
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = GECIS_REKLAM_SRC;
+      script.defer = true;
+      document.body.appendChild(script);
     }
-    console.log(`[MONETAG AD TRIGERED]: ${GAME_CONFIG.ads.interstitialId}`);
+    console.log(`[MONETAG AD TRIGGERED]: ${GAME_CONFIG.ads.interstitialId}`);
   };
 
   return (
@@ -242,6 +270,7 @@ function App() {
         <OceanScene distance={distance} />
       </div>
 
+      {/* Üst Banner Kutusu: Reklam buraya hapsedilecek */}
       <div className="ad-banner top-banner">
         <div id={GAME_CONFIG.ads.topBannerId}></div>
       </div>
@@ -290,6 +319,7 @@ function App() {
         </div>
       </main>
 
+      {/* Alt Banner Kutusu: Reklam buraya hapsedilecek */}
       <div className="ad-banner bottom-banner">
         <div id={GAME_CONFIG.ads.bottomBannerId}></div>
       </div>
