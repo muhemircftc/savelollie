@@ -1,14 +1,8 @@
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useEffect, useState, useRef } from 'react';
 import { supabase, initializeUser } from './supabaseClient';
-import { GAME_CONFIG } from './gameConfig';
 import OceanScene from './OceanScene';
 import './App.css';
-
-// 🛠️ REKLAM LINKLERINI BURAYA YAPIŞTIRIN (Monetag panelinden aldığın src linkleri)
-const UST_BANNER_SRC = "https://nap5k.com/tag.min.js"; 
-const ALT_BANNER_SRC = "https://nap5k.com/tag.min.js"; 
-const GECIS_REKLAM_SRC = "https://n6wxm.com/vignette.min.js"; 
 
 function App() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -18,6 +12,7 @@ function App() {
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [hasFedToday, setHasFedToday] = useState<boolean>(false);
 
+  // 🧠 AKILLI SİMÜLASYON SAYAÇLARI
   const [recentSharkCount, setRecentSharkCount] = useState<number>(10);
   const [recentLollieCount, setRecentLollieCount] = useState<number>(10);
 
@@ -71,7 +66,7 @@ function App() {
     return () => { supabase.removeChannel(myChannel); };
   }, []);
 
-  // 🧠 SİMÜLASYON MOTORU
+  // 🧠 OYUNCU SİMÜLASYON MOTORU
   useEffect(() => {
     const simulationInterval = setInterval(() => {
       const hour = new Date().getHours();
@@ -101,31 +96,6 @@ function App() {
     }, 2500);
 
     return () => clearInterval(simulationInterval);
-  }, []);
-
-  // 🛠️ ADIM 1: BANNER REKLAMLARINI KUTULARIN İÇİNE ZORLA HAPSEDEN MOTOR
-  useEffect(() => {
-    // Üst Banner Kutusu Çizildi mi kontrol et ve içine script enjekte et
-    const topBox = document.getElementById(GAME_CONFIG.ads.topBannerId);
-    if (topBox && topBox.children.length === 0) {
-      const script = document.createElement('script');
-      script.setAttribute('data-cfasync', 'false');
-      script.async = true;
-      script.type = 'text/javascript';
-      script.src = UST_BANNER_SRC;
-      topBox.appendChild(script);
-    }
-
-    // Alt Banner Kutusu Çizildi mi kontrol et ve içine script enjekte et
-    const bottomBox = document.getElementById(GAME_CONFIG.ads.bottomBannerId);
-    if (bottomBox && bottomBox.children.length === 0) {
-      const script = document.createElement('script');
-      script.setAttribute('data-cfasync', 'false');
-      script.async = true;
-      script.type = 'text/javascript';
-      script.src = ALT_BANNER_SRC;
-      bottomBox.appendChild(script);
-    }
   }, []);
 
   useEffect(() => {
@@ -193,8 +163,6 @@ function App() {
     setLoading(true);
 
     try {
-      triggerInterstitialAd(); // Reklamı tetikle (Artık sadece burada yüklenecek!)
-      
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
 
@@ -249,30 +217,11 @@ function App() {
     }
   };
 
-  // 🛠️ ADIM 2: GEÇİŞ REKLAMINI SADECE BUTONA BASILDIĞINDA DOĞURAN AKILLI TETİKLEYİCİ
-  const triggerInterstitialAd = () => {
-    const scriptId = 'monetag-vignette-script';
-    
-    // Eğer script daha önce eklenmediyse, İLK KEZ butona basıldığında dinamik olarak oluştur
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = GECIS_REKLAM_SRC;
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-    console.log(`[MONETAG AD TRIGGERED]: ${GAME_CONFIG.ads.interstitialId}`);
-  };
-
   return (
     <div className="game-container">
+      {/* 3D Akvaryum Alanı artık tam ekran akıyor */}
       <div className="fullscreen-3d-environment">
         <OceanScene distance={distance} />
-      </div>
-
-      {/* Üst Banner Kutusu: Reklam buraya hapsedilecek */}
-      <div className="ad-banner top-banner">
-        <div id={GAME_CONFIG.ads.topBannerId}></div>
       </div>
 
       <main className="game-ui-layer">
@@ -318,11 +267,6 @@ function App() {
           </a>
         </div>
       </main>
-
-      {/* Alt Banner Kutusu: Reklam buraya hapsedilecek */}
-      <div className="ad-banner bottom-banner">
-        <div id={GAME_CONFIG.ads.bottomBannerId}></div>
-      </div>
     </div>
   );
 }
