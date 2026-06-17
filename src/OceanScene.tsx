@@ -86,7 +86,6 @@ interface BaitInstance {
   speed: number;
 }
 
-// YENİ HALİ:
 function SceneContent({ distance }: { distance: number }) {
   const [baits, setBaits] = useState<BaitInstance[]>([]);
   const sharkGroupRef = useRef<THREE.Group>(null);
@@ -140,9 +139,9 @@ function SceneContent({ distance }: { distance: number }) {
         {
           id: now + Math.random(),
           type: 'shark',
-          x: 0, // useFrame içinde karakterin canlı X koordinatına otomatik kilitlenir
+          x: 0, 
           y: 5.5,
-          speed: 0.08 + Math.random() * 0.04 // Dinamik ve hızlı düşüş varyasyonu
+          speed: 0.08 + Math.random() * 0.04 
         },
         {
           id: now + Math.random() + 1,
@@ -152,7 +151,7 @@ function SceneContent({ distance }: { distance: number }) {
           speed: 0.08 + Math.random() * 0.04
         }
       ]);
-    }, 220); // Her 220ms'de bir çift yeni yem gökten düşmeye başlar
+    }, 220); 
 
     return () => clearInterval(interval);
   }, []);

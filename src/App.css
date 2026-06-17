@@ -1,496 +1,274 @@
 /* Genel Sayfa Sıfırlama */
-
 html, body, #root {
-
   margin: 0;
-
   padding: 0;
-
   width: 100%;
-
   height: 100%;
-
   overflow: hidden;
-
   background-color: #030712;
-
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-
   -webkit-font-smoothing: antialiased;
-
 }
-
-
 
 /* Ana Oyun Kapsayıcısı */
-
 .game-container {
-
   position: relative;
-
   width: 100%;
-
   height: 100%;
-
   display: flex;
-
   flex-direction: column;
-
   justify-content: space-between;
-
   align-items: center;
-
   box-sizing: border-box;
-
 }
-
-
 
 /* Arka Planda Duran Fullscreen 3D Sahne */
-
 .fullscreen-3d-environment {
-
   position: absolute;
-
   top: 0;
-
   left: 0;
-
   width: 100%;
-
   height: 100%;
-
   z-index: 1;
-
 }
-
-
-
-/* Reklam Banner Ortak Mimarisi */
-
-.ad-banner {
-
-  width: 100%;
-
-  height: 50px;
-
-  background: rgba(2, 8, 19, 0.85);
-
-  backdrop-filter: blur(8px);
-
-  border-bottom: 1px solid rgba(30, 41, 59, 0.5);
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  color: #475569;
-
-  font-size: 11px;
-
-  letter-spacing: 1px;
-
-  text-transform: uppercase;
-
-  z-index: 10;
-
-}
-
-
-
-.bottom-banner {
-
-  border-top: 1px solid rgba(30, 41, 59, 0.5);
-
-  border-bottom: none;
-
-}
-
-
 
 /* Kullanıcı Arayüzü Ön Katmanı */
-
 .game-ui-layer {
-
   position: relative;
-
   z-index: 5;
-
   width: 100%;
-
   flex: 1;
-
   display: flex;
-
   flex-direction: column;
-
   justify-content: space-between;
-
   align-items: center;
-
   box-sizing: border-box;
-
 }
 
-
-
-/* Üst Kontrol Paneli (Sayaçlar ve Ses Yan Yana Kusursuz) */
-
+/* Üst Kontrol Paneli */
 .top-control-bar {
-
   width: 100%;
-
   display: flex;
-
   justify-content: center;
-
   align-items: center;
-
   max-width: 500px;
-
   padding: 15px 0;
-
   position: relative;
-
   z-index: 999;
-
   gap: 10px;
-
 }
-
-
 
 /* Tıklanabilir Ses Butonu Stili */
-
 .audio-toggle {
-
   background: rgba(2, 8, 19, 0.7) !important;
-
   backdrop-filter: blur(4px);
-
   color: #64748b;
-
   border: 1px solid rgba(100, 116, 139, 0.3);
-
   padding: 8px 14px;
-
   font-size: 11px;
-
   font-weight: bold;
-
   letter-spacing: 1px;
-
   border-radius: 20px;
-
   height: 33px;
-
   box-sizing: border-box;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   min-width: 110px;
-
   cursor: pointer !important;
-
   pointer-events: auto !important;
-
   position: relative;
-
   z-index: 1000;
-
   transition: all 0.3s ease;
-
 }
-
-
 
 .audio-toggle.playing {
-
   color: #38bdf8;
-
   border-color: rgba(56, 189, 248, 0.5);
-
   text-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
-
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
-
 }
 
-
-
-/* 10 Saniye Yoğunluk Kutularının Ortak Stili */
-
+/* Yoğunluk Kutularının Ortak Stili */
 .intensity-box {
-
   background: rgba(2, 8, 19, 0.7);
-
   backdrop-filter: blur(4px);
-
   padding: 8px 14px;
-
   font-size: 10px;
-
   font-weight: bold;
-
   letter-spacing: 0.5px;
-
   border-radius: 20px;
-
   height: 33px;
-
   box-sizing: border-box;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   min-width: 110px;
-
   position: relative;
-
   z-index: 1000;
-
   pointer-events: none;
-
   transition: all 0.3s ease;
-
   text-align: center;
-
 }
 
-
-
-/* Köpekbalığı Sayacı - Neon Kırmızı */
-
+/* Köpekbalığı Sayacı */
 .shark-intensity {
-
   color: #ef4444;
-
   border: 1px solid rgba(239, 68, 68, 0.2);
-
 }
-
 .shark-intensity.active {
-
   border-color: rgba(239, 68, 68, 0.6);
-
   text-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
-
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
-
 }
 
-
-
-/* Lollie Sayacı - Neon Pembe Yerine Neon Yeşil Yapıldı */
-
+/* Lollie Sayacı */
 .lollie-intensity {
-
   color: #4ade80;
-
   border: 1px solid rgba(74, 222, 128, 0.2);
-
 }
-
 .lollie-intensity.active {
-
   border-color: rgba(74, 222, 128, 0.6);
-
   text-shadow: 0 0 6px rgba(74, 222, 128, 0.8);
-
   box-shadow: 0 0 10px rgba(74, 222, 128, 0.15);
-
 }
-
-
 
 /* Alt Aksiyon Alanı Yerleşimi */
-
 .action-area {
-
   width: 100%;
-
   max-width: 400px;
-
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
-
   padding-bottom: 25px;
-
 }
-
-
 
 /* Buton Grubu Yan Yana Düzeni */
-
 .button-group {
-
   width: 100%;
-
   display: flex;
-
   gap: 20px;
-
   justify-content: center;
-
   margin-bottom: 5px;
-
 }
-
-
 
 /* Şeffaf Neon Butonların Ana Ortak Yapısı */
-
 .btn {
-
   flex: 1;
-
   max-width: 150px;
-
   height: 50px;
-
   background: transparent !important;
-
   font-weight: 700;
-
   font-size: 14px;
-
   letter-spacing: 1.5px;
-
   border-radius: 12px;
-
   cursor: pointer !important;
-
   pointer-events: auto !important;
-
   position: relative;
-
   z-index: 1000;
-
   transition: all 0.25s ease;
-
 }
-
-
 
 .btn:disabled {
-
   opacity: 0.5;
-
   cursor: not-allowed !important;
-
 }
 
-
-
-/* Köpekbalığı Buton Neon Kırmızı Kenarlık ve Parlama */
-
+/* Köpekbalığı Buton */
 .btn-shark {
-
   color: #ef4444;
-
   border: 2px solid #ef4444;
-
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
-
 }
-
 .btn-shark:hover:not(:disabled) {
-
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
-
   text-shadow: 0 0 5px #ef4444;
-
   transform: translateY(-2px);
-
 }
 
-
-
-/* Lollie Buton Neon Yeşil Kenarlık ve Parlama */
-
+/* Lollie Buton */
 .btn-lollie {
-
   color: #4ade80;
-
   border: 2px solid #4ade80;
-
   box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
-
 }
-
 .btn-lollie:hover:not(:disabled) {
-
   box-shadow: 0 0 20px rgba(74, 222, 128, 0.6);
-
   text-shadow: 0 0 5px #4ade80;
-
   transform: translateY(-2px);
-
 }
 
-
-
-/* Üstüne Tıklanamayan Bozuk Linki Düzelten Kesin Çözüm CSS Blokları */
-
+/* Mail Linki Düzeni */
 .mail-redirect-text {
-
   display: inline-block;
-
   margin-top: 15px;
-
   font-size: 10px;
-
   font-weight: 500;
-
   letter-spacing: 0.5px;
-
   color: rgba(100, 116, 139, 0.45);
-
   text-decoration: none;
-
   text-transform: uppercase;
-
   transition: all 0.3s ease;
-
- 
-
-  /* Katmanların altında kalıp kilitlenmesini kesin olarak çözen kodlar */
-
   cursor: pointer !important;
-
   pointer-events: auto !important;
-
   position: relative;
-
   z-index: 1010;
-
 }
-
-
-
-/* Fareyle üzerine gelince veya tıklanınca siber-mavi parlama efekti */
 
 .mail-redirect-text:hover,
-
 .mail-redirect-text:active {
-
   color: #38bdf8;
-
   text-shadow: 0 0 8px rgba(56, 189, 248, 0.9);
-
   opacity: 1;
-
 } 
 
+/* Canlı Savaş Akışı Panel Stili */
+.live-battle-feed {
+  width: 100%;
+  max-width: 400px;
+  height: 28px;
+  background: rgba(2, 8, 19, 0.4);
+  backdrop-filter: blur(2px);
+  border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  margin-bottom: 15px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Kayan Siber Yazı Animasyonu */
+.feed-ticker-wrapper {
+  display: flex;
+  white-space: nowrap;
+  position: absolute;
+  animation: ticker-swim 8s linear infinite;
+}
+
+.feed-item {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Takımlara Göre Parlama Renkleri */
+.feed-shark-action {
+  color: #ef4444;
+  text-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+}
+
+.feed-lollie-action {
+  color: #4ade80;
+  text-shadow: 0 0 5px rgba(74, 222, 128, 0.5);
+}
+
+@keyframes ticker-swim {
+  0% { transform: translateY(100%); opacity: 0; }
+  10% { transform: translateY(0); opacity: 1; }
+  90% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-100%); opacity: 0; }
+}
