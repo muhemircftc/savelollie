@@ -10,7 +10,7 @@ export const initializeUser = async () => {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   
   if (sessionError) {
-    console.error("Oturum kontrol edilirken hata oluştu:", sessionError.message);
+    console.error("An error occurred while checking the session:", sessionError.message);
     return null;
   }
 
@@ -18,7 +18,7 @@ export const initializeUser = async () => {
   if (!session) {
     const { data, error } = await supabase.auth.signInAnonymously();
     if (error) {
-      console.error("Anonim giriş başarısız oldu:", error.message);
+      console.error("An error occurred while signing in anonymously:", error.message);
       return null;
     }
     return data.user;

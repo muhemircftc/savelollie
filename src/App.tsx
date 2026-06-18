@@ -19,7 +19,6 @@ function App() {
   const [tickerMessage, setTickerMessage] = useState<string>("CONNECTING TO GLOBAL SATELLITE FEED...");
   const [tickerClass, setTickerClass] = useState<string>("feed-lollie-action");
 
-  const channelRef = useRef<any>(null);
   const soundTimerRef = useRef<any>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -52,21 +51,11 @@ function App() {
     };
     setupGame();
 
-    const interval = setInterval(fetchGameState, 30000);
+    // 🟢 GÜNCELLEME: Her 2 saniyede bir veritabanından mesafeyi garanti ve ücretsiz çek
+    const interval = setInterval(fetchGameState, 2000);
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const myChannel = supabase.channel('global_feeds');
-    myChannel
-      .on('broadcast', { event: 'distance_update' }, ({ payload }) => {
-        setDistance(payload.distance);
-      })
-      .subscribe();
-
-    channelRef.current = myChannel;
-    return () => { supabase.removeChannel(myChannel); };
-  }, []);
 
   // 🧠 OYUNCU VE CANLI AKIŞ SİMÜLASYON MOTORU
   useEffect(() => {
@@ -276,15 +265,7 @@ function App() {
       const todayStr = new Date().toISOString().split('T')[0];
       localStorage.setItem('last_feed_date', todayStr);
       setHasFedToday(true);
-
-      // Diğer oyunculara temiz ve net bir sayı değeri gönder
-      if (channelRef.current) {
-        channelRef.current.send({
-          type: 'broadcast',
-          event: 'distance_update',
-          payload: { distance: secureNewDistance } // string değil, garanti sayı gidiyor
-        });
-      }
+      
     } else if (data.error === 'ALREADY_FED_TODAY') {
       setHasFedToday(true);
       alert("You have already used your feed allowance today!");
