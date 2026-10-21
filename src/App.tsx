@@ -11,11 +11,11 @@ function App() {
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [hasFedToday, setHasFedToday] = useState<boolean>(false);
 
-  // 🧠 AKILLI SİMÜLASYON SAYAÇLARI
+  // 🧠 smart simulation counters
   const [recentSharkCount, setRecentSharkCount] = useState<number>(10);
   const [recentLollieCount, setRecentLollieCount] = useState<number>(10);
 
-  // 📡 CANLI SAVAŞ AKIŞI (TICKER) STATE YAPISI
+  // 📡 LIVE BATTLE FLOW (TICKET) STATE STRUCTURE
   const [tickerMessage, setTickerMessage] = useState<string>("CONNECTING TO GLOBAL SATELLITE FEED...");
   const [tickerClass, setTickerClass] = useState<string>("feed-lollie-action");
 
@@ -51,13 +51,13 @@ function App() {
     };
     setupGame();
 
-    // 🟢 GÜNCELLEME: Her 2 saniyede bir veritabanından mesafeyi garanti ve ücretsiz çek
+    // 🟢 UPDATE: Distance is guaranteed and retrieved from the database free of charge every 2 seconds.
     const interval = setInterval(fetchGameState, 2000);
     return () => clearInterval(interval);
   }, []);
 
 
-  // 🧠 OYUNCU VE CANLI AKIŞ SİMÜLASYON MOTORU
+  // 🧠 GAMER AND LIVE STREAMING SIMULATION ENGINE
   useEffect(() => {
     const locations = [
       "someone in ABU DHABI", "someone in ABUJA", "someone in ACCRA", "someone in ADDIS ABABA",
@@ -241,7 +241,7 @@ function App() {
     const data = await response.json();
     
     if (response.ok && data.success === true) {
-      // 🚨 KRİTİK GÜVENLİK GÜNCELLEMESİ: Gelen veriyi kesinlikle sayıya çeviriyoruz
+      // 🚨 CRITICAL SECURITY UPDATE: We are definitely converting incoming data into numbers
       const secureNewDistance = Number(data.new_distance);
 
       let currentStepText = "0.500m";
@@ -259,7 +259,7 @@ function App() {
         setTickerMessage(`🟢 YOU BOOSTED LOLLIE! (+${currentStepText})`);
       }
 
-      // State'i güvenli sayı ile güncelle
+      // Update the State with a safe number.
       setDistance(secureNewDistance);
       
       const todayStr = new Date().toISOString().split('T')[0];
@@ -281,21 +281,21 @@ function App() {
 
   return (
     <div className="game-container">
-      {/* 3D Akvaryum Alanı */}
+      {/* 3D Aquarium Area */}
       <div className="fullscreen-3d-environment">
         <OceanScene distance={distance} />
       </div>
 
       <main className="game-ui-layer">
         
-        {/* 📊 ÜST PANEL: GÜNCEL MESAFE VE KONTROLLER (TAMAMI BİR ARADA VE EN ÜSTTE) */}
+        {/* 📊 TOP PANEL: CURRENT DISTANCE AND CONTROLS (ALL IN ONE PLACE AT THE TOP) */}
         <div style={{ textAlign: 'center', margin: '20px 0 10px 0', width: '100%', zIndex: 1001 }}>
           <span style={{ fontSize: '10px', color: '#64748b', letterSpacing: '3px', fontWeight: 'bold' }}>CURRENT DISTANCE</span>
           <h1 style={{ fontSize: '42px', fontWeight: '900', color: '#f8fafc', margin: '2px 0 15px 0', fontFamily: 'monospace', textShadow: '0 0 15px rgba(248,250,252,0.4)' }}>
             {Number(distance).toFixed(3)} m
           </h1>
 
-          {/* SES VE SON BESLEME MİKTARI KUTULARI (ARTIK MESAFENİN TAM ALTINDA) */}
+          {/* SOUND AND FINAL FEED QUANTITY BOXES (NOW DIRECTLY BELOW THE DISTANCE) */}
           <div className="top-control-bar" style={{ margin: '0 auto', display: 'flex', justifyContent: 'center' }}>
             <div className={`intensity-box shark-intensity ${recentSharkCount > 0 ? 'active' : ''}`}>
               SHARK: {recentSharkCount}
@@ -318,7 +318,7 @@ function App() {
             />
           </div>
 
-          {/* 📡 SİBER CANLI AKIŞ PANELİ (FEED BUTONLARININ ÜSTÜNDE) */}
+          {/* 📡 CYBER LIVE STREAM PANEL (ABOVE THE FEED BUTTONS) */}
           <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '10px' }}>
             <div className="live-battle-feed">
               <div key={tickerMessage} className="feed-ticker-wrapper">
@@ -349,7 +349,7 @@ function App() {
         </div>
       </main>
 
-      {/* 🚨 SONSUZA KADAR BİTİŞ: TAMAMEN SİYAH CENAZE ANITI EKRANI */}
+      {/* 🚨 THE END FOREVER: A COMPLETELY BLACK FUNERAL MEMORIAL SCREEN */}
       {distance <= 0 && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
@@ -358,7 +358,7 @@ function App() {
           padding: '20px', textAlign: 'center'
         }}>
           
-          {/* PAYLAŞILABİLİR ANIT KARTI KONTEYNERİ */}
+          {/* SHAREABLE MEMORIAL CARD CONTAINER */}
           <div style={{
             border: '1px solid rgba(255, 255, 255, 0.1)',
             padding: '40px 30px',
@@ -395,7 +395,7 @@ function App() {
             </div>
           </div>
           
-          {/* Monetag Akıllı Link Köprüsü */}
+          {/* Monetag Smart Link Bridge */}
           <a 
             href="https://omg10.com/4/11160417" 
             target="_blank" 
@@ -427,7 +427,7 @@ function App() {
             LEAVE A DIGITAL FLOWER IN MEMORY OF LOLLIE! 🥀
           </a>
 
-          {/* X Paylaşım Butonu */}
+          {/* X Share Button */}
           <button 
             onClick={() => {
               const shareText = `Lollie has passed away! In memory of everyone who tried to save her! The ocean will now be silent forever! #lolliehaspassedaway🖤`;
