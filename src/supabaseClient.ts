@@ -5,7 +5,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Oyuncunun arka planda anonim olarak oturum açmasını sağlayan fonksiyon
+// A function that allows the player to log in anonymously in the background.
 export const initializeUser = async () => {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   
@@ -14,7 +14,7 @@ export const initializeUser = async () => {
     return null;
   }
 
-  // Eğer mevcut bir oturum yoksa, yeni bir anonim oturum başlat
+  // If there is no existing session, start a new anonymous session.
   if (!session) {
     const { data, error } = await supabase.auth.signInAnonymously();
     if (error) {
