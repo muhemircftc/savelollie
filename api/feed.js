@@ -5,9 +5,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Only the POST method is allowed.' });
   }
 
-  const { choice, captchaToken, token } = req.body; // userId yerine token aldık
+  const { choice, captchaToken, token } = req.body; // Use tokens instead of userid
 
-  // 1. İNSAN MI KONTROLÜ (Cloudflare Turnstile)
+  // 1. botcheck
   const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -19,25 +19,25 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Bot attack detected!' });
   }
 
-  // 2. SUPABASE'E BAĞLAN
+  // 2. supabase connection
   const supabase = createClient(
     process.env.VITE_SUPABASE_URL, 
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // 3. KRİTİK ADIM: Token'ı Supabase'e sorarak gerçek Kullanıcı ID'sini buluyoruz
+  // 3. ask token to the supabase anf find the user id
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   
   if (authError || !user) {
     return res.status(401).json({ error: 'Invalid or fake user session!' });
   }
 
-  const verifiedUserId = user.id; // Artık trollerin manipüle edemeyeceği gerçek ID elimizde
+  const verifiedUserId = user.id; // real id can t be manipulated
 
-  // 4. GÜVENLİ SQL FONKSİYONUNU ÇALIŞTIR
+  // 4. run the secured sql function
   const { data, error } = await supabase.rpc('feed_character_secure', {
     choice_param: choice,
-    user_id_param: verifiedUserId // Doğrulanmış ID'yi gönderiyoruz
+    user_id_param: verifiedUserId // send the verified id
   });
 
   if (error) {
