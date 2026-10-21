@@ -116,7 +116,7 @@ function SceneContent({ distance }: { distance: number }) {
     camera.updateProjectionMatrix();
   }, [size.width, size.height, camera, scene]);
 
-  // RESPONSIVE KARAKTER POZİSYONLARI
+  // RESPONSIVE character positions
   const getCharacterX = (type: 'shark' | 'lollie', currentDist: number) => {
     const isPortraitMode = size.height > size.width;
     const sharkStartX = isPortraitMode ? -2.1 : -3.5;
@@ -129,7 +129,7 @@ function SceneContent({ distance }: { distance: number }) {
     return lollieX;
   };
 
-  // 🔄 OTOMATİK, KESİNTİSİZ VE HIZLI YEM AKIŞI MECHANISM (BUTONDAN BAĞIMSIZ)
+  // 🔄 AUTOMATIC, SEAMLESS AND RAPID BAIT FLOW MECHANISM (BUTTON INDEPENDENT)
   useEffect(() => {
     const interval = setInterval(() => {
       const now = performance.now();
