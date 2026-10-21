@@ -1,8 +1,8 @@
 export const GAME_CONFIG = {
 
-  // MARKA VE SPONSORLUK YÖNETİMİ
+  // BRAND AND SPONSORSHIP MANAGEMENT
 
-  // Klasöre model yüklemediysen 'fallback' kalsın. Yüklediğin an 'gltf' yap.
+  // If you haven't uploaded a model to the folder, leave it as 'fallback'. Change it to 'gltf' as soon as you upload it.
 
   models: {
 
@@ -18,13 +18,13 @@ export const GAME_CONFIG = {
 
    
 
-    sharkBaitMode: 'gltf' as 'gltf' | 'gltf', // Marka yemi aktifse 'gltf' yap
+    sharkBaitMode: 'gltf' as 'gltf' | 'gltf', // If the brand bait is active, use 'gltf'.
 
     sharkBaitPath: '/models/shark_bait.glb',
 
    
 
-    lollieBaitMode: 'gltf' as 'gltf' | 'gltf', // Marka yemi aktifse 'gltf' yap
+    lollieBaitMode: 'gltf' as 'gltf' | 'gltf', // If the brand bait is active, use 'gltf'.
 
     lollieBaitPath: '/models/lollie_bait.glb',
 
