@@ -1,4 +1,4 @@
-# Logs
+
 logs
 *.log
 npm-debug.log*
@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 
-# Editor directories and files
+
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -23,16 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 
-# Yerel çevre değişkenleri (Supabase anahtarların)
+
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Bağımlılıklar (Sakın yükleme, çok ağırdır)
+
 node_modules/
 
-# Derleme klasörü
+
 dist/
 build/
